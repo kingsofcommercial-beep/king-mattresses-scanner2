@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><title>King of Mattresses — Scanner PRO</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#2b394d;--gold:#f5b942;--muted:#9aabc1;--green:#34d399}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8fafc;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:22px 18px 16px;background:linear-gradient(130deg,#17243a,#111827);border-bottom:1px solid var(--line)}
+h1{font-size:23px;margin:0 0 5px}header p{color:var(--muted);margin:0;font-size:13px}
+main{max-width:850px;margin:auto;padding:16px;display:grid;gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+h2{font-size:16px;margin:0 0 12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat{background:#0d1727;border:1px solid var(--line);padding:12px;border-radius:12px}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{font-size:24px}
+button,input{font:inherit}button{border:0;border-radius:11px;padding:12px 14px;background:var(--gold);color:#201707;font-weight:750;cursor:pointer}
+button.secondary{background:#26364c;color:#f8fafc;border:1px solid #3b4c63}button.danger{background:#49252d;color:#fecdd3;border:1px solid #71343e}
+button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+#reader{width:100%;max-height:330px;object-fit:cover;border-radius:12px;background:#050a12;margin-top:12px}
+.note{color:var(--muted);font-size:12px;line-height:1.5}.row{display:flex;gap:8px;align-items:center}.row input{flex:1;min-width:0}
+input{background:#0d1727;color:white;border:1px solid #3b4c63;border-radius:10px;padding:12px;width:100%}
+label{display:block;color:var(--muted);font-size:12px;margin:10px 0 5px}
+.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.itemtop{display:flex;justify-content:space-between;gap:12px;align-items:start}.item strong{font-size:14px;overflow-wrap:anywhere}.qty{font-size:22px;font-weight:800;color:var(--gold);white-space:nowrap}
+.subcodes{color:var(--muted);font-size:12px;margin-top:7px;line-height:1.6}.itembuttons{display:flex;gap:6px;margin-top:9px}.itembuttons button{padding:7px 10px;font-size:12px}
+.empty{color:var(--muted);text-align:center;padding:18px 4px}.status{color:var(--green);font-size:13px;min-height:18px;margin-top:8px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:4px 16px 28px}
+@media(max-width:420px){.stats{gap:6px}.stat{padding:9px}.stat strong{font-size:20px}.panel{padding:13px}}
+</style>
+</head>
+<body>
+<header><h1 style="color:#f5b942">♛ KING OF MATTRESSES</h1><p>SCANNER PRO · CONTROLE INTELIGENTE DE ESTOQUE</p></header>
+<main>
+<section class="panel">
+ <h2>1. Escanear produtos</h2>
+ <div class="actions"><button id="start">Abrir câmera e escanear</button><button class="secondary" id="stop" disabled>Parar câmera</button></div>
+ <video id="reader" playsinline muted hidden></video>
+ <div class="status" id="cameraStatus">A câmera será solicitada quando você tocar em “Abrir câmera”.</div>
+ <p class="note">Enquadre um código por vez. Após cada leitura, aguarde o aviso sonoro/vibração antes de aproximar o próximo. A câmera exige HTTPS e permissão de acesso.</p>
+</section>
+<section class="panel">
+ <h2>2. Lançamento manual (alternativa)</h2>
+ <label for="manual">Digite ou cole o código completo</label>
+ <div class="row"><input id="manual" inputmode="numeric" autocomplete="off" placeholder="Código de barras"><button id="add">Adicionar</button></div>
+ <p class="note">Útil se a câmera não reconhecer o código ou se você estiver usando um leitor externo.</p>
+</section>
+<section class="panel">
+ <h2>3. Resumo da contagem</h2>
+ <div class="stats">
+  <div class="stat"><small>Unidades totais</small><strong id="total">0</strong></div>
+  <div class="stat"><small>Produtos agrupados</small><strong id="families">0</strong></div>
+  <div class="stat"><small>Códigos diferentes</small><strong id="codes">0</strong></div>
+ </div>
+ <p class="note">Agrupamento: todos os dígitos, exceto o último, formam a chave do produto. O código completo permanece salvo nos detalhes.</p>
+</section>
+<section class="panel">
+ <h2>4. Produtos contados</h2>
+ <div id="list" class="empty">Nenhuma leitura realizada ainda.</div>
+</section>
+<section class="panel">
+ <h2>5. Relatórios e segurança dos dados</h2>
+ <div class="actions">
+  <button id="csv">Exportar Excel (CSV)</button>
+  <button class="secondary" id="backup">Baixar backup JSON</button>
+ </div>
+ <div class="actions" style="margin-top:8px">
+  <button class="secondary" id="importBtn">Restaurar backup JSON</button>
+  <button class="danger" id="clear">Zerar contagem</button>
+ </div>
+ <input type="file" id="file" accept=".json,application/json" hidden>
+ <p class="note">O CSV abre no Excel e contém o resumo agrupado e os códigos originais. Os dados ficam salvos neste navegador/dispositivo; exporte um backup para transferir ou guardar a contagem.</p>
+ <div class="status" id="message" aria-live="polite"></div>
+</section>
+</main><footer>♛ KING OF MATTRESSES · SCANNER PRO<br>Contagem local no dispositivo · Confira os códigos e quantidades antes de fechar o inventário.</footer>
+<script>
+(() => {
+const $=id=>document.getElementById(id);
+let records={}; // chave sem o último dígito -> {codes: {código: quantidade}}
+let stream=null, detector=null, scanning=false, lastCode='', lastAt=0, busy=false;
+const KEY='contagem_inteligente_v1';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(records));}catch(e){msg('Não foi possível salvar neste navegador. Exporte um backup.');}}
+function msg(s){$('message').textContent=s;}
+function status(s){$('cameraStatus').textContent=s;}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function addCode(raw){
+ const code=String(raw||'').trim().replace(/\s+/g,'');
+ if(!/^[0-9A-Za-z-]{2,80}$/.test(code)){msg('Código inválido. Confira os caracteres e tente novamente.');return false;}
+ if(code.length<2){msg('O código precisa ter pelo menos 2 caracteres para aplicar a regra do último dígito.');return false;}
+ const family=code.slice(0,-1);
+ if(!records[family])records[family]={codes:{}};
+ records[family].codes[code]=(records[family].codes[code]||0)+1;
+ save();render();msg('Leitura adicionada: '+code);return true;
+}
+function render(){
+ const groups=Object.entries(records).sort((a,b)=>a[0].localeCompare(b[0]));
+ let total=0,codeCount=0;
+ for(const [,g] of groups)for(const q of Object.values(g.codes)){total+=q;codeCount++;}
+ $('total').textContent=total;$('families').textContent=groups.length;$('codes').textContent=codeCount;
+ if(!groups.length){$('list').className='empty';$('list').textContent='Nenhuma leitura realizada ainda.';return;}
+ $('list').className='';
+ $('list').innerHTML=groups.map(([family,g])=>{
+  const qty=Object.values(g.codes).reduce((a,b)=>a+b,0);
+  const details=Object.entries(g.codes).sort((a,b)=>a[0].localeCompare(b[0])).map(([c,q])=>
+   `<div class="row" style="justify-content:space-between;gap:8px"><span>${escapeHtml(c)}</span><span>× ${q}</span></div>`).join('');
+  return `<div class="item"><div class="itemtop"><div><strong>Referência agrupada: ${escapeHtml(family)}*</strong><div class="subcodes">${details}</div></div><div class="qty">${qty}</div></div><div class="itembuttons"><button class="secondary" data-family="${escapeHtml(family)}" data-action="minus">− 1 unidade</button><button class="secondary" data-family="${escapeHtml(family)}" data-action="plus">+ 1 unidade</button><button class="danger" data-family="${escapeHtml(family)}" data-action="delete">Excluir grupo</button></div></div>`;
+ }).join('');
+ $('list').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  const f=b.dataset.family,action=b.dataset.action,g=records[f];if(!g)return;
+  const codes=Object.keys(g.codes).sort();
+  if(action==='delete'){if(confirm('Excluir todas as leituras deste grupo?'))delete records[f];}
+  else if(action==='plus'){const c=codes[codes.length-1];g.codes[c]=(g.codes[c]||0)+1;}
+  else if(action==='minus'){const c=codes[codes.length-1];g.codes[c]--;if(g.codes[c]<=0)delete g.codes[c];if(!Object.keys(g.codes).length)delete records[f];}
+  save();render();
+ }));
+}
+function exportCSV(){
+ const rows=[['Tipo','Referencia agrupada (sem ultimo caractere)','Codigo original','Quantidade']];
+ for(const [family,g] of Object.entries(records).sort((a,b)=>a[0].localeCompare(b[0]))){
+  const sum=Object.values(g.codes).reduce((a,b)=>a+b,0);
+  rows.push(['RESUMO',family,'',sum]);
+  for(const [code,q] of Object.entries(g.codes))rows.push(['CODIGO',family,code,q]);
+ }
+ if(rows.length===1){msg('Não há dados para exportar.');return;}
+ const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'contagem_produtos.csv');
+ msg('Relatório CSV gerado. Abra o arquivo no Excel.');
+}
+function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+async function start(){
+ if(!('BarcodeDetector' in window)){status('Este navegador não oferece leitura de código de barras nativa. Use Chrome atualizado em Android ou faça lançamentos manuais/leitor externo.');return;}
+ try{
+  const formats=await BarcodeDetector.getSupportedFormats();
+  detector=new BarcodeDetector({formats});
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+  $('reader').srcObject=stream;$('reader').hidden=false;await $('reader').play();scanning=true;
+  $('start').disabled=true;$('stop').disabled=false;status('Câmera ativa. Aponte para o código de barras.');scanLoop();
+ }catch(e){status('Não foi possível abrir a câmera: '+e.message+'. Verifique a permissão e use uma conexão HTTPS.');stop();}
+}
+async function scanLoop(){
+ if(!scanning||busy)return;
+ if($('reader').readyState>=2){
+  try{
+   const found=await detector.detect($('reader'));
+   if(found.length){
+    const code=found[0].rawValue,now=Date.now();
+    if(code && (code!==lastCode||now-lastAt>1400)){
+     lastCode=code;lastAt=now;addCode(code);
+     if(navigator.vibrate)navigator.vibrate(100);
+    }
+   }
+  }catch(e){}
+ }
+ if(scanning)requestAnimationFrame(scanLoop);
+}
+function stop(){
+ scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+ $('reader').srcObject=null;$('reader').hidden=true;$('start').disabled=false;$('stop').disabled=true;
+ status('Câmera desligada.');
+}
+$('start').addEventListener('click',start);$('stop').addEventListener('click',stop);
+$('add').addEventListener('click',()=>{if(addCode($('manual').value))$('manual').value='';$('manual').focus();});
+$('manual').addEventListener('keydown',e=>{if(e.key==='Enter')$('add').click();});
+$('csv').addEventListener('click',exportCSV);
+$('backup').addEventListener('click',()=>download(new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json'}),'backup_contagem.json'));
+$('importBtn').addEventListener('click',()=>$('file').click());
+$('file').addEventListener('change',async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{const data=JSON.parse(await f.text()),r=data.records||data;if(!r||typeof r!=='object')throw Error('Formato inválido');
+  for(const [family,g] of Object.entries(r)){if(!g||!g.codes||typeof g.codes!=='object')throw Error('Backup inválido');for(const [c,q] of Object.entries(g.codes)){if(c.slice(0,-1)!==family||!Number.isInteger(q)||q<1)throw Error('Dados inconsistentes no backup');}}
+  if(!confirm('Substituir a contagem atual pelos dados do backup?'))return;
+  records=r;save();render();msg('Backup restaurado com sucesso.');
+ }catch(err){msg('Não foi possível restaurar: '+err.message);}finally{$('file').value='';}
+});
+$('clear').addEventListener('click',()=>{if(confirm('Tem certeza de que deseja apagar toda a contagem? Exporte um backup antes, se precisar.')){records={};save();render();msg('Contagem zerada.');}});
+try{const old=localStorage.getItem(KEY);if(old)records=JSON.parse(old);}catch(e){records={};}
+render();
+})();
+</script>
+</body></html>
